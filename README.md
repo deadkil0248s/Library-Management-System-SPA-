@@ -1,4 +1,4 @@
-# LibraSync — Library Management System
+# LibraSolve — Library Management System
 
 A fully client-side library management system built with vanilla HTML, CSS, and JavaScript. No backend, no build tools, no dependencies beyond a Google Fonts import. All data persists across sessions via the browser's `localStorage`.
 
