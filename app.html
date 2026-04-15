@@ -1,0 +1,866 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LibraSync — Library Management System</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<div class="overlay" id="overlay" onclick="closeSidebar()"></div>
+
+<div class="app">
+  <!-- SIDEBAR -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-brand">
+      <div class="logo">L</div>
+      <div>
+        <h1>LibraSync</h1>
+        <small>Library Management</small>
+      </div>
+    </div>
+
+    <div class="nav-section">Main</div>
+    <ul class="nav-links">
+      <li><a class="active" onclick="showPage('dashboard', this)"><span class="icon">&#9632;</span> Dashboard</a></li>
+      <li><a onclick="showPage('booksPage', this)"><span class="icon">&#128218;</span> Books <span class="badge" id="bookCount">0</span></a></li>
+      <li><a onclick="showPage('usersPage', this)"><span class="icon">&#128100;</span> Users <span class="badge" id="userCount">0</span></a></li>
+    </ul>
+    <div class="nav-section">Operations</div>
+    <ul class="nav-links">
+      <li><a onclick="showPage('circulationPage', this)"><span class="icon">&#128260;</span> Circulation</a></li>
+      <li><a onclick="showPage('recPage', this)"><span class="icon">&#11088;</span> Recommendations</a></li>
+      <li><a onclick="showPage('finesPage', this)"><span class="icon">&#128176;</span> Fines</a></li>
+      <li><a onclick="showPage('utilsPage', this)"><span class="icon">&#128295;</span> Utilities</a></li>
+    </ul>
+
+    <div class="sidebar-footer">
+      Data stored in localStorage<br>
+      <span style="color:var(--accent);">&#9679;</span> All systems operational
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <div class="main">
+    <div class="topbar">
+      <div class="flex-row gap-8">
+        <button class="hamburger" onclick="toggleSidebar()">&#9776;</button>
+        <h2 id="pageTitle">Dashboard</h2>
+      </div>
+      <div class="topbar-actions">
+        <div class="search-bar" style="max-width:240px;">
+          <span class="search-icon">&#128269;</span>
+          <input id="globalSearch" placeholder="Quick search..." onkeyup="globalSearchHandler(event)">
+        </div>
+        <span class="theme-label" id="themeIcon">&#127769;</span>
+        <button class="theme-toggle" onclick="toggleTheme()" title="Toggle theme"></button>
+      </div>
+    </div>
+
+    <div class="content">
+      <!-- ========== DASHBOARD ========== -->
+      <div id="dashboard" class="page active">
+        <div class="stats-grid" id="statsGrid"></div>
+        <div class="grid-2">
+          <div class="panel">
+            <div class="panel-header"><h3>&#128202; Popular Books</h3></div>
+            <div id="popularBooks"></div>
+          </div>
+          <div class="panel">
+            <div class="panel-header"><h3>&#128340; Recent Activity</h3></div>
+            <div id="activityLog"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ========== BOOKS ========== -->
+      <div id="booksPage" class="page">
+        <div class="panel">
+          <div class="panel-header"><h3>&#10133; Add New Book</h3></div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>Book Title</label>
+              <input id="bookTitle" placeholder="e.g. The Great Gatsby">
+            </div>
+            <div class="form-group">
+              <label>Tags (comma separated)</label>
+              <input id="bookTags" placeholder="e.g. classic, novel, fiction">
+            </div>
+            <button class="btn btn-primary" onclick="addBook()" style="align-self:flex-end;">&#10133; Add Book</button>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-header">
+            <h3>&#128218; Book Catalog</h3>
+            <div class="flex-row gap-8">
+              <div class="view-toggle">
+                <button class="active" onclick="setBookView('grid', this)" title="Grid">&#9638;</button>
+                <button onclick="setBookView('table', this)" title="Table">&#9776;</button>
+              </div>
+              <select id="sortSelect" onchange="sortBooks(this.value)" style="width:auto;padding:6px 12px;">
+                <option value="">Sort by...</option>
+                <option value="title">Title A-Z</option>
+                <option value="title-desc">Title Z-A</option>
+                <option value="popularity">Most Popular</option>
+                <option value="newest">Newest First</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- CATEGORY FILTER -->
+          <div class="filter-bar" id="filterBar"></div>
+
+          <div class="form-row mb-16">
+            <div class="search-bar" style="max-width:100%;">
+              <span class="search-icon">&#128269;</span>
+              <input id="searchQuery" placeholder="Search by title, tag, or ID..." onkeyup="searchBooks()">
+            </div>
+          </div>
+          <div id="booksList"></div>
+        </div>
+      </div>
+
+      <!-- ========== USERS ========== -->
+      <div id="usersPage" class="page">
+        <div class="panel">
+          <div class="panel-header"><h3>&#10133; Add New User</h3></div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>User Name</label>
+              <input id="userName" placeholder="e.g. John Doe">
+            </div>
+            <button class="btn btn-primary" onclick="addUser()" style="align-self:flex-end;">&#10133; Add User</button>
+          </div>
+        </div>
+        <div class="panel">
+          <div class="panel-header"><h3>&#128100; Registered Users</h3></div>
+          <div id="usersList"></div>
+        </div>
+      </div>
+
+      <!-- ========== CIRCULATION ========== -->
+      <div id="circulationPage" class="page">
+        <div class="grid-2">
+          <div class="panel">
+            <div class="panel-header"><h3>&#128214; Borrow Book</h3></div>
+            <div class="form-row">
+              <div class="form-group"><label>User</label><select id="borrowUserId"></select></div>
+              <div class="form-group"><label>Book</label><select id="borrowBookId"></select></div>
+            </div>
+            <button class="btn btn-success" onclick="borrowBook()">&#128214; Borrow</button>
+          </div>
+          <div class="panel">
+            <div class="panel-header"><h3>&#128228; Return Book</h3></div>
+            <div class="form-row">
+              <div class="form-group"><label>User</label><select id="returnUserId" onchange="populateReturnBooks()"></select></div>
+              <div class="form-group"><label>Book</label><select id="returnBookId"></select></div>
+            </div>
+            <button class="btn btn-danger" onclick="returnBook()">&#128228; Return</button>
+          </div>
+        </div>
+        <div class="panel">
+          <div class="panel-header">
+            <h3>&#128260; Transaction History</h3>
+            <button class="btn btn-secondary btn-sm" onclick="undoAction()">&#8634; Undo Last</button>
+          </div>
+          <div id="transactionLog"></div>
+        </div>
+      </div>
+
+      <!-- ========== RECOMMENDATIONS ========== -->
+      <div id="recPage" class="page">
+        <div class="panel">
+          <div class="panel-header"><h3>&#11088; Get Personalized Recommendations</h3></div>
+          <div class="form-row">
+            <div class="form-group"><label>Select User</label><select id="recUid"></select></div>
+            <button class="btn btn-teal" onclick="recommend()" style="align-self:flex-end;">&#10024; Get Recommendations</button>
+          </div>
+        </div>
+        <div id="recList"></div>
+      </div>
+
+      <!-- ========== FINES CALCULATOR ========== -->
+      <div id="finesPage" class="page">
+        <div class="panel">
+          <div class="panel-header">
+            <h3>&#128176; Fine Calculator</h3>
+            <div class="flex-row gap-8">
+              <div class="form-group" style="min-width:120px;flex:0;">
+                <label>Rate per day</label>
+                <input id="fineRate" type="number" value="2" min="0" step="0.5" style="width:100px;" onchange="renderFines()">
+              </div>
+            </div>
+          </div>
+          <div id="fineSummary"></div>
+          <div id="finesList"></div>
+        </div>
+      </div>
+
+      <!-- ========== UTILITIES ========== -->
+      <div id="utilsPage" class="page">
+        <div class="grid-2">
+          <div class="panel">
+            <div class="panel-header"><h3>&#128213; Book Request Queue</h3></div>
+            <div class="form-row">
+              <div class="form-group"><label>Select Book</label><select id="reqBid"></select></div>
+            </div>
+            <div class="form-row">
+              <button class="btn btn-primary" onclick="enqueueRequest()">&#10133; Request</button>
+              <button class="btn btn-success" onclick="processRequest()">&#9654; Process Next</button>
+            </div>
+            <div id="queueList" style="margin-top:12px;"></div>
+          </div>
+          <div class="panel">
+            <div class="panel-header"><h3>&#9200; Overdue Tracker</h3></div>
+            <div class="form-row">
+              <div class="form-group"><label>Select Book</label><select id="dueBid"></select></div>
+              <div class="form-group"><label>Due in (days)</label><input id="dueDays" type="number" placeholder="e.g. 7" min="0"></div>
+            </div>
+            <button class="btn btn-primary mb-16" onclick="addDue()">&#10133; Add Due Entry</button>
+            <div id="dueList"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="toast-container" id="toastContainer"></div>
+
+<script>
+/* ================================================================
+   LibraSync — Library Management System
+   Pure JS + localStorage | No backend required
+   Demonstrates: Stack, Queue, Priority Queue, Scoring Algorithm,
+                 Hash Map, Category Filtering, Fine Calculation
+================================================================ */
+
+// ==================== STATE ====================
+let books = [], users = [], borrowStack = [], requestQueue = [], overduePQ = [], activityLog = [];
+let nextBookId = 1, nextUserId = 1;
+let bookView = 'grid';
+let activeTagFilter = null;
+let currentTheme = 'dark';
+
+// ==================== THEME ====================
+function toggleTheme() {
+  currentTheme = currentTheme === 'dark' ? 'light' : 'dark';
+  document.documentElement.setAttribute('data-theme', currentTheme);
+  document.getElementById('themeIcon').innerHTML = currentTheme === 'dark' ? '&#127769;' : '&#9728;';
+  localStorage.setItem('librasync_theme', currentTheme);
+}
+function loadTheme() {
+  const saved = localStorage.getItem('librasync_theme');
+  if (saved) {
+    currentTheme = saved;
+    document.documentElement.setAttribute('data-theme', currentTheme);
+    document.getElementById('themeIcon').innerHTML = currentTheme === 'dark' ? '&#127769;' : '&#9728;';
+  }
+}
+
+// ==================== PERSISTENCE ====================
+function saveState() {
+  const state = {
+    books,
+    users: users.map(u => ({ ...u, borrowed: [...u.borrowed] })),
+    borrowStack, requestQueue, overduePQ, activityLog,
+    nextBookId, nextUserId
+  };
+  localStorage.setItem('librasync_data', JSON.stringify(state));
+}
+function loadState() {
+  const raw = localStorage.getItem('librasync_data');
+  if (!raw) return false;
+  try {
+    const s = JSON.parse(raw);
+    books = s.books || [];
+    users = (s.users || []).map(u => ({ ...u, borrowed: new Set(u.borrowed) }));
+    borrowStack = s.borrowStack || [];
+    requestQueue = s.requestQueue || [];
+    overduePQ = s.overduePQ || [];
+    activityLog = s.activityLog || [];
+    nextBookId = s.nextBookId || 1;
+    nextUserId = s.nextUserId || 1;
+    return true;
+  } catch { return false; }
+}
+
+// ==================== NAVIGATION ====================
+function showPage(id, el) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  document.querySelectorAll('.nav-links a').forEach(a => a.classList.remove('active'));
+  if (el) el.classList.add('active');
+  const titles = {
+    dashboard: 'Dashboard', booksPage: 'Books', usersPage: 'Users',
+    circulationPage: 'Circulation', recPage: 'Recommendations',
+    finesPage: 'Fines', utilsPage: 'Utilities'
+  };
+  document.getElementById('pageTitle').textContent = titles[id] || '';
+  closeSidebar();
+  if (id === 'dashboard') renderDashboard();
+  if (id === 'booksPage') renderFilterBar();
+  if (id === 'circulationPage') populateCirculationDropdowns();
+  if (id === 'recPage') populateRecDropdown();
+  if (id === 'finesPage') renderFines();
+  if (id === 'utilsPage') { populateUtilDropdowns(); renderQueue(); renderDue(); }
+}
+function toggleSidebar() {
+  document.getElementById('sidebar').classList.toggle('open');
+  document.getElementById('overlay').classList.toggle('show');
+}
+function closeSidebar() {
+  document.getElementById('sidebar').classList.remove('open');
+  document.getElementById('overlay').classList.remove('show');
+}
+
+// ==================== TOAST ====================
+function toast(msg, type = 'info') {
+  const t = document.createElement('div');
+  t.className = `toast ${type}`;
+  t.innerHTML = msg;
+  document.getElementById('toastContainer').appendChild(t);
+  setTimeout(() => t.remove(), 3000);
+}
+
+// ==================== BOOK AVAILABILITY ====================
+function getBookAvailability(bookId) {
+  const borrowers = users.filter(u => u.borrowed.has(bookId));
+  return {
+    available: borrowers.length === 0,
+    borrowers: borrowers
+  };
+}
+function availBadgeHtml(bookId) {
+  const info = getBookAvailability(bookId);
+  if (info.available) {
+    return `<span class="avail-badge available"><span class="dot"></span>Available</span>`;
+  } else {
+    const names = info.borrowers.map(u => u.name).join(', ');
+    return `<span class="avail-badge borrowed" title="Borrowed by: ${escapeHtml(names)}"><span class="dot"></span>Borrowed</span>`;
+  }
+}
+
+// ==================== CATEGORY FILTER ====================
+function getAllTags() {
+  const tagSet = new Set();
+  books.forEach(b => b.tags.forEach(t => tagSet.add(t.toLowerCase())));
+  return [...tagSet].sort();
+}
+function renderFilterBar() {
+  const tags = getAllTags();
+  const el = document.getElementById('filterBar');
+  el.innerHTML = `<span class="text-muted" style="font-size:12px;font-weight:600;">FILTER:</span>
+    <span class="filter-chip ${!activeTagFilter ? 'active' : ''}" onclick="setTagFilter(null)">All</span>
+    ${tags.map(t => `<span class="filter-chip ${activeTagFilter === t ? 'active' : ''}" onclick="setTagFilter('${escapeHtml(t)}')">${escapeHtml(t)}</span>`).join('')}`;
+}
+function setTagFilter(tag) {
+  activeTagFilter = tag;
+  renderFilterBar();
+  applyFilters();
+}
+function applyFilters() {
+  const q = document.getElementById('searchQuery').value.trim().toLowerCase();
+  let result = books;
+  if (activeTagFilter) {
+    result = result.filter(b => b.tags.some(t => t.toLowerCase() === activeTagFilter));
+  }
+  if (q) {
+    const qNum = parseInt(q);
+    result = result.filter(b =>
+      b.id === qNum ||
+      b.title.toLowerCase().includes(q) ||
+      b.tags.some(t => t.toLowerCase().includes(q))
+    );
+  }
+  renderBooks(result);
+}
+
+// ==================== BOOKS ====================
+function addBook() {
+  const t = document.getElementById('bookTitle').value.trim();
+  const tags = document.getElementById('bookTags').value.split(',').map(s => s.trim()).filter(s => s);
+  if (!t) { toast('Please enter a book title', 'error'); return; }
+  books.push({ id: nextBookId++, title: t, tags, count: 0 });
+  document.getElementById('bookTitle').value = '';
+  document.getElementById('bookTags').value = '';
+  logActivity('add', `Added "${t}" to catalog`);
+  toast(`"${escapeHtml(t)}" added to catalog`, 'success');
+  renderBooks(); renderFilterBar(); updateCounts(); saveState();
+}
+function deleteBook(id) {
+  const b = books.find(x => x.id === id);
+  if (!b) return;
+  books = books.filter(x => x.id !== id);
+  users.forEach(u => u.borrowed.delete(id));
+  overduePQ = overduePQ.filter(d => d.bid !== id);
+  logActivity('add', `Removed "${b.title}" from catalog`);
+  toast(`"${escapeHtml(b.title)}" removed`, 'warning');
+  renderBooks(); renderUsers(); renderFilterBar(); updateCounts(); saveState();
+}
+function sortBooks(type) {
+  if (type === 'title') books.sort((a, b) => a.title.localeCompare(b.title));
+  else if (type === 'title-desc') books.sort((a, b) => b.title.localeCompare(a.title));
+  else if (type === 'popularity') books.sort((a, b) => b.count - a.count);
+  else if (type === 'newest') books.sort((a, b) => b.id - a.id);
+  else return;
+  applyFilters(); saveState();
+}
+function searchBooks() { applyFilters(); }
+
+function setBookView(view, btn) {
+  bookView = view;
+  btn.parentElement.querySelectorAll('button').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  applyFilters();
+}
+
+const tagColorMap = ['purple', 'teal', 'pink', 'gold'];
+function getTagColor(tag) {
+  let hash = 0;
+  for (let i = 0; i < tag.length; i++) hash = tag.charCodeAt(i) + ((hash << 5) - hash);
+  return tagColorMap[Math.abs(hash) % tagColorMap.length];
+}
+
+function renderBooks(list) {
+  const arr = Array.isArray(list) ? list : books;
+  const el = document.getElementById('booksList');
+  if (!arr.length) {
+    el.innerHTML = `<div class="empty-state"><div class="empty-icon">&#128218;</div><p>${activeTagFilter ? 'No books in "' + escapeHtml(activeTagFilter) + '" category' : 'No books found'}</p></div>`;
+    return;
+  }
+  const maxCount = Math.max(...books.map(b => b.count), 1);
+  if (bookView === 'grid') {
+    el.innerHTML = `<div class="book-grid">${arr.map(b => `
+      <div class="book-card">
+        <button class="delete-btn" onclick="deleteBook(${b.id})" title="Remove">&#10005;</button>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+          <div class="book-id">#${String(b.id).padStart(3, '0')}</div>
+          ${availBadgeHtml(b.id)}
+        </div>
+        <div class="book-title">${escapeHtml(b.title)}</div>
+        <div class="book-tags">${b.tags.map(t => `<span class="tag ${getTagColor(t)}" onclick="setTagFilter('${escapeHtml(t.toLowerCase())}')">${escapeHtml(t)}</span>`).join('')}</div>
+        <div class="book-meta">
+          <div class="pop-bar">
+            <div class="pop-bar-track"><div class="pop-bar-fill" style="width:${(b.count / maxCount) * 100}%"></div></div>
+            <span>${b.count} borrows</span>
+          </div>
+        </div>
+        ${!getBookAvailability(b.id).available ? `<div style="margin-top:8px;font-size:11px;color:var(--text-dim);">Held by: ${getBookAvailability(b.id).borrowers.map(u => escapeHtml(u.name)).join(', ')}</div>` : ''}
+      </div>
+    `).join('')}</div>`;
+  } else {
+    el.innerHTML = `<div class="table-wrap"><table>
+      <thead><tr><th>ID</th><th>Title</th><th>Tags</th><th>Status</th><th>Popularity</th><th></th></tr></thead>
+      <tbody>${arr.map(b => {
+        const avail = getBookAvailability(b.id);
+        return `<tr>
+          <td style="color:var(--accent);font-weight:600;">#${String(b.id).padStart(3, '0')}</td>
+          <td style="font-weight:500;">${escapeHtml(b.title)}</td>
+          <td>${b.tags.map(t => `<span class="tag ${getTagColor(t)}" onclick="setTagFilter('${escapeHtml(t.toLowerCase())}')">${escapeHtml(t)}</span>`).join('')}</td>
+          <td>${availBadgeHtml(b.id)}${!avail.available ? `<div style="font-size:11px;color:var(--text-dim);margin-top:3px;">${avail.borrowers.map(u => escapeHtml(u.name)).join(', ')}</div>` : ''}</td>
+          <td><div class="pop-bar"><div class="pop-bar-track"><div class="pop-bar-fill" style="width:${(b.count / maxCount) * 100}%"></div></div><span style="font-size:12px;">${b.count}</span></div></td>
+          <td><button class="btn btn-sm btn-secondary" onclick="deleteBook(${b.id})">&#10005;</button></td>
+        </tr>`;
+      }).join('')}</tbody>
+    </table></div>`;
+  }
+}
+
+// ==================== USERS ====================
+const avatarColors = ['#6c5ce7', '#00cec9', '#fd79a8', '#fdcb6e', '#e17055', '#00b894', '#a29bfe', '#fab1a0'];
+function getAvatarColor(id) { return avatarColors[id % avatarColors.length]; }
+
+function addUser() {
+  const n = document.getElementById('userName').value.trim();
+  if (!n) { toast('Please enter a user name', 'error'); return; }
+  users.push({ id: nextUserId++, name: n, borrowed: new Set() });
+  document.getElementById('userName').value = '';
+  logActivity('add', `Registered user "${n}"`);
+  toast(`User "${escapeHtml(n)}" registered`, 'success');
+  renderUsers(); updateCounts(); saveState();
+}
+function deleteUser(id) {
+  const u = users.find(x => x.id === id);
+  if (!u) return;
+  users = users.filter(x => x.id !== id);
+  toast(`User "${escapeHtml(u.name)}" removed`, 'warning');
+  renderUsers(); updateCounts(); saveState();
+}
+function renderUsers() {
+  const el = document.getElementById('usersList');
+  if (!users.length) {
+    el.innerHTML = `<div class="empty-state"><div class="empty-icon">&#128100;</div><p>No users registered</p></div>`;
+    return;
+  }
+  el.innerHTML = `<div class="user-grid">${users.map(u => {
+    const initials = u.name.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2);
+    const borrowedBooks = [...u.borrowed].map(bid => {
+      const b = books.find(x => x.id === bid);
+      return b ? `<span>${escapeHtml(b.title)}</span>` : `<span>Book #${bid}</span>`;
+    }).join('') || '<span style="color:var(--text-dim);">No books borrowed</span>';
+    return `<div class="user-card">
+      <div class="user-card-head">
+        <div class="avatar" style="background:${getAvatarColor(u.id)}">${initials}</div>
+        <div>
+          <div class="user-name">${escapeHtml(u.name)}</div>
+          <div class="user-id">ID: ${u.id} &middot; ${u.borrowed.size} book(s)</div>
+        </div>
+        <button class="delete-btn" onclick="deleteUser(${u.id})" title="Remove">&#10005;</button>
+      </div>
+      <div class="borrowed-list">${borrowedBooks}</div>
+    </div>`;
+  }).join('')}</div>`;
+}
+
+// ==================== CIRCULATION ====================
+function populateCirculationDropdowns() {
+  const bu = document.getElementById('borrowUserId');
+  const bb = document.getElementById('borrowBookId');
+  const ru = document.getElementById('returnUserId');
+  bu.innerHTML = users.map(u => `<option value="${u.id}">${escapeHtml(u.name)} (ID:${u.id})</option>`).join('');
+  const availBooks = books.filter(b => getBookAvailability(b.id).available);
+  bb.innerHTML = availBooks.length
+    ? availBooks.map(b => `<option value="${b.id}">${escapeHtml(b.title)} (ID:${b.id})</option>`).join('')
+    : '<option>No books available</option>';
+  ru.innerHTML = users.map(u => `<option value="${u.id}">${escapeHtml(u.name)} (ID:${u.id})</option>`).join('');
+  populateReturnBooks();
+}
+function populateReturnBooks() {
+  const uid = parseInt(document.getElementById('returnUserId').value);
+  const u = users.find(x => x.id === uid);
+  const rb = document.getElementById('returnBookId');
+  if (!u || u.borrowed.size === 0) { rb.innerHTML = '<option>No books to return</option>'; return; }
+  rb.innerHTML = [...u.borrowed].map(bid => {
+    const b = books.find(x => x.id === bid);
+    return `<option value="${bid}">${b ? escapeHtml(b.title) : 'Book #' + bid} (ID:${bid})</option>`;
+  }).join('');
+}
+function borrowBook() {
+  const uid = parseInt(document.getElementById('borrowUserId').value);
+  const bid = parseInt(document.getElementById('borrowBookId').value);
+  const u = users.find(x => x.id === uid), b = books.find(x => x.id === bid);
+  if (!u || !b) { toast('Select valid user and book', 'error'); return; }
+  if (u.borrowed.has(bid)) { toast(`${u.name} already has "${b.title}"`, 'warning'); return; }
+  if (!getBookAvailability(bid).available) { toast(`"${b.title}" is already borrowed`, 'warning'); return; }
+  u.borrowed.add(bid);
+  b.count++;
+  borrowStack.push({ type: 'borrow', uid, bid, time: Date.now() });
+  logActivity('borrow', `${u.name} borrowed "${b.title}"`);
+  toast(`${escapeHtml(u.name)} borrowed "${escapeHtml(b.title)}"`, 'success');
+  renderAll(); populateCirculationDropdowns(); saveState();
+}
+function returnBook() {
+  const uid = parseInt(document.getElementById('returnUserId').value);
+  const bid = parseInt(document.getElementById('returnBookId').value);
+  const u = users.find(x => x.id === uid), b = books.find(x => x.id === bid);
+  if (!u || !b) { toast('Select valid user and book', 'error'); return; }
+  if (!u.borrowed.has(bid)) { toast(`${u.name} doesn't have this book`, 'warning'); return; }
+  u.borrowed.delete(bid);
+  borrowStack.push({ type: 'return', uid, bid, time: Date.now() });
+  logActivity('return', `${u.name} returned "${b.title}"`);
+  toast(`${escapeHtml(u.name)} returned "${escapeHtml(b.title)}"`, 'success');
+  renderAll(); populateCirculationDropdowns(); saveState();
+}
+function undoAction() {
+  const act = borrowStack.pop();
+  if (!act) { toast('Nothing to undo', 'warning'); return; }
+  const u = users.find(x => x.id === act.uid), b = books.find(x => x.id === act.bid);
+  if (!u || !b) { toast('Cannot undo — entity missing', 'error'); return; }
+  if (act.type === 'borrow') { u.borrowed.delete(act.bid); b.count = Math.max(0, b.count - 1); }
+  else if (act.type === 'return') { u.borrowed.add(act.bid); }
+  logActivity('return', `Undid ${act.type} — ${u.name}, "${b.title}"`);
+  toast(`Undid ${act.type}: ${escapeHtml(u.name)} / "${escapeHtml(b.title)}"`, 'info');
+  renderAll(); saveState();
+}
+function renderTransactionLog() {
+  const el = document.getElementById('transactionLog');
+  if (!borrowStack.length) {
+    el.innerHTML = `<div class="empty-state"><div class="empty-icon">&#128260;</div><p>No transactions yet</p></div>`;
+    return;
+  }
+  el.innerHTML = [...borrowStack].reverse().slice(0, 20).map(act => {
+    const u = users.find(x => x.id === act.uid);
+    const b = books.find(x => x.id === act.bid);
+    const time = act.time ? new Date(act.time).toLocaleString() : '';
+    return `<div class="activity-item">
+      <div class="activity-dot ${act.type}"></div>
+      <div>
+        <div><strong>${u ? escapeHtml(u.name) : 'User #' + act.uid}</strong> ${act.type === 'borrow' ? 'borrowed' : 'returned'} <strong>"${b ? escapeHtml(b.title) : 'Book #' + act.bid}"</strong></div>
+        <div class="activity-time">${time}</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ==================== RECOMMENDATIONS ====================
+function populateRecDropdown() {
+  document.getElementById('recUid').innerHTML = users.map(u => `<option value="${u.id}">${escapeHtml(u.name)} (ID:${u.id})</option>`).join('');
+}
+function recommend() {
+  const uid = parseInt(document.getElementById('recUid').value);
+  const u = users.find(x => x.id === uid);
+  if (!u) { toast('Select a user', 'error'); return; }
+  const myTags = new Set();
+  u.borrowed.forEach(bid => { const bx = books.find(b => b.id === bid); if (bx) bx.tags.forEach(t => myTags.add(t)); });
+  const scores = {};
+  books.forEach(b => {
+    if (!u.borrowed.has(b.id)) {
+      let s = 0;
+      b.tags.forEach(t => { if (myTags.has(t)) s += 0.5; });
+      s += b.count * 0.1;
+      scores[b.id] = s;
+    }
+  });
+  const rec = Object.entries(scores).sort((a, b) => b[1] - a[1]).slice(0, 5);
+  const el = document.getElementById('recList');
+  if (!rec.length) {
+    el.innerHTML = `<div class="empty-state" style="margin-top:20px;"><div class="empty-icon">&#11088;</div><p>No recommendations for ${escapeHtml(u.name)}</p></div>`;
+    return;
+  }
+  el.innerHTML = rec.map((r, i) => {
+    const b = books.find(x => x.id == r[0]);
+    return `<div class="rec-card">
+      <div class="rec-rank ${i === 0 ? 'gold' : ''}">${i + 1}</div>
+      <div>
+        <div style="font-weight:600;">${b ? escapeHtml(b.title) : 'Book #' + r[0]}</div>
+        <div style="margin-top:4px;">${b ? b.tags.map(t => `<span class="tag ${getTagColor(t)}">${t}</span>`).join(' ') : ''}</div>
+      </div>
+      ${availBadgeHtml(parseInt(r[0]))}
+      <div class="rec-score">Score: ${parseFloat(r[1]).toFixed(2)}</div>
+    </div>`;
+  }).join('');
+}
+
+// ==================== FINE CALCULATOR ====================
+function renderFines() {
+  const rate = parseFloat(document.getElementById('fineRate').value) || 2;
+  const now = Date.now();
+  const fineData = overduePQ.map(d => {
+    const b = books.find(x => x.id === d.bid);
+    const daysOver = Math.max(0, Math.floor((now - d.due) / (1000 * 60 * 60 * 24)));
+    const fine = daysOver * rate;
+    const daysLeft = Math.ceil((d.due - now) / (1000 * 60 * 60 * 24));
+    return { ...d, book: b, daysOver, fine, daysLeft, isOverdue: now > d.due };
+  });
+
+  const totalFines = fineData.reduce((s, f) => s + f.fine, 0);
+  const overdueCount = fineData.filter(f => f.isOverdue).length;
+  const maxFine = Math.max(...fineData.map(f => f.fine), 0);
+
+  document.getElementById('fineSummary').innerHTML = `<div class="fine-summary">
+    <div class="fine-summary-item"><div class="fs-value" style="color:var(--danger);">$${totalFines.toFixed(2)}</div><div class="fs-label">Total Fines</div></div>
+    <div class="fine-summary-item"><div class="fs-value" style="color:var(--accent4);">${overdueCount}</div><div class="fs-label">Overdue Books</div></div>
+    <div class="fine-summary-item"><div class="fs-value" style="color:var(--accent);">${fineData.length}</div><div class="fs-label">Tracked Books</div></div>
+    <div class="fine-summary-item"><div class="fs-value" style="color:var(--accent3);">$${maxFine.toFixed(2)}</div><div class="fs-label">Highest Fine</div></div>
+  </div>`;
+
+  const el = document.getElementById('finesList');
+  if (!fineData.length) {
+    el.innerHTML = `<div class="empty-state"><div class="empty-icon">&#128176;</div><p>No books tracked — add due entries in Utilities first</p></div>`;
+    return;
+  }
+  el.innerHTML = fineData.sort((a, b) => b.fine - a.fine).map(f => `
+    <div class="overdue-item ${f.isOverdue ? 'danger' : ''}">
+      <div style="flex:1;">
+        <div style="font-weight:500;">${f.book ? escapeHtml(f.book.title) : 'Book #' + f.bid}</div>
+        <div class="text-muted">Due: ${new Date(f.due).toLocaleDateString()} &middot; ${f.isOverdue ? f.daysOver + ' days overdue' : f.daysLeft + ' days remaining'}</div>
+      </div>
+      <span class="fine-amount ${f.fine === 0 ? 'none' : ''}">
+        ${f.fine > 0 ? '$' + f.fine.toFixed(2) : 'No fine'}
+      </span>
+      <span class="overdue-days ${f.isOverdue ? 'late' : f.daysLeft <= 3 ? 'warn' : 'safe'}">
+        ${f.isOverdue ? 'OVERDUE' : f.daysLeft + 'd left'}
+      </span>
+    </div>
+  `).join('');
+}
+
+// ==================== REQUEST QUEUE ====================
+function populateUtilDropdowns() {
+  const opts = books.map(b => `<option value="${b.id}">${escapeHtml(b.title)} (ID:${b.id})</option>`).join('');
+  document.getElementById('reqBid').innerHTML = opts;
+  document.getElementById('dueBid').innerHTML = opts;
+}
+function enqueueRequest() {
+  const bid = parseInt(document.getElementById('reqBid').value); if (!bid) return;
+  requestQueue.push(bid);
+  const b = books.find(x => x.id === bid);
+  toast(`Queued request for "${b ? escapeHtml(b.title) : 'Book #' + bid}"`, 'info');
+  renderQueue(); saveState();
+}
+function processRequest() {
+  if (!requestQueue.length) { toast('Queue is empty', 'warning'); return; }
+  const bid = requestQueue.shift();
+  const b = books.find(x => x.id === bid);
+  toast(`Processed request for "${b ? escapeHtml(b.title) : 'Book #' + bid}"`, 'success');
+  renderQueue(); saveState();
+}
+function renderQueue() {
+  const el = document.getElementById('queueList');
+  if (!requestQueue.length) {
+    el.innerHTML = `<div class="queue-visual"><span class="text-muted">Queue is empty</span></div>`;
+    return;
+  }
+  el.innerHTML = `<div class="queue-visual">${requestQueue.map((bid, i) => {
+    const b = books.find(x => x.id === bid);
+    return `${i > 0 ? '<span class="queue-arrow">&#10140;</span>' : ''}<div class="queue-item">${b ? escapeHtml(b.title) : '#' + bid}</div>`;
+  }).join('')}</div>`;
+}
+
+// ==================== OVERDUE TRACKER ====================
+function addDue() {
+  const bid = parseInt(document.getElementById('dueBid').value);
+  const days = parseInt(document.getElementById('dueDays').value);
+  if (!bid || isNaN(days)) { toast('Enter book and days', 'error'); return; }
+  const dueDate = Date.now() + days * 24 * 60 * 60 * 1000;
+  overduePQ.push({ bid, due: dueDate });
+  overduePQ.sort((a, b) => a.due - b.due);
+  const b = books.find(x => x.id === bid);
+  toast(`Due entry added for "${b ? escapeHtml(b.title) : 'Book #' + bid}"`, 'success');
+  document.getElementById('dueDays').value = '';
+  renderDue(); saveState();
+}
+function renderDue() {
+  const el = document.getElementById('dueList');
+  if (!overduePQ.length) {
+    el.innerHTML = `<div class="empty-state"><div class="empty-icon">&#9200;</div><p>No due dates tracked</p></div>`;
+    return;
+  }
+  const now = Date.now();
+  el.innerHTML = overduePQ.map(d => {
+    const b = books.find(x => x.id === d.bid);
+    const daysLeft = Math.ceil((d.due - now) / (1000 * 60 * 60 * 24));
+    const isOverdue = now > d.due;
+    const cls = isOverdue ? 'late' : daysLeft <= 3 ? 'warn' : 'safe';
+    return `<div class="overdue-item ${isOverdue ? 'danger' : ''}">
+      <div>
+        <div style="font-weight:500;">${b ? escapeHtml(b.title) : 'Book #' + d.bid}</div>
+        <div class="text-muted">Due: ${new Date(d.due).toLocaleDateString()}</div>
+      </div>
+      <span class="overdue-days ${cls}">${isOverdue ? 'OVERDUE' : daysLeft + 'd left'}</span>
+    </div>`;
+  }).join('');
+}
+
+// ==================== DASHBOARD ====================
+function renderDashboard() {
+  const totalBorrowed = users.reduce((s, u) => s + u.borrowed.size, 0);
+  const totalBorrows = books.reduce((s, b) => s + b.count, 0);
+  const availCount = books.filter(b => getBookAvailability(b.id).available).length;
+  const now = Date.now();
+  const overdueCount = overduePQ.filter(d => now > d.due).length;
+
+  document.getElementById('statsGrid').innerHTML = `
+    <div class="stat-card"><div class="stat-glow"></div><div class="stat-icon">&#128218;</div><div class="stat-value">${books.length}</div><div class="stat-label">Total Books</div></div>
+    <div class="stat-card"><div class="stat-glow"></div><div class="stat-icon">&#128100;</div><div class="stat-value">${users.length}</div><div class="stat-label">Registered Users</div></div>
+    <div class="stat-card"><div class="stat-glow"></div><div class="stat-icon">&#9989;</div><div class="stat-value">${availCount}/${books.length}</div><div class="stat-label">Available Now</div></div>
+    <div class="stat-card"><div class="stat-glow"></div><div class="stat-icon">&#128200;</div><div class="stat-value">${totalBorrows}</div><div class="stat-label">Total Borrows</div></div>
+    <div class="stat-card"><div class="stat-glow"></div><div class="stat-icon">&#9888;</div><div class="stat-value">${overdueCount}</div><div class="stat-label">Overdue Books</div></div>
+  `;
+  const popular = [...books].sort((a, b) => b.count - a.count).slice(0, 5);
+  const maxC = Math.max(...popular.map(b => b.count), 1);
+  document.getElementById('popularBooks').innerHTML = popular.map((b, i) => `
+    <div style="display:flex;align-items:center;gap:12px;padding:10px 0;${i < popular.length - 1 ? 'border-bottom:1px solid var(--border);' : ''}">
+      <span style="font-size:18px;font-weight:800;color:${i === 0 ? 'var(--accent4)' : 'var(--text-dim)'};min-width:24px;">${i + 1}</span>
+      <div style="flex:1;">
+        <div style="font-weight:500;font-size:14px;">${escapeHtml(b.title)}</div>
+        <div class="pop-bar" style="margin-top:4px;"><div class="pop-bar-track" style="width:120px;"><div class="pop-bar-fill" style="width:${(b.count / maxC) * 100}%"></div></div><span class="text-muted">${b.count}</span></div>
+      </div>
+      ${availBadgeHtml(b.id)}
+    </div>
+  `).join('');
+  const al = document.getElementById('activityLog');
+  if (!activityLog.length) {
+    al.innerHTML = '<div class="text-muted" style="padding:16px 0;">No activity yet</div>';
+  } else {
+    al.innerHTML = activityLog.slice(-10).reverse().map(a => `
+      <div class="activity-item">
+        <div class="activity-dot ${a.type}"></div>
+        <div>
+          <div style="font-size:13px;">${a.msg}</div>
+          <div class="activity-time">${new Date(a.time).toLocaleString()}</div>
+        </div>
+      </div>
+    `).join('');
+  }
+}
+
+// ==================== GLOBAL SEARCH ====================
+function globalSearchHandler(e) {
+  const q = e.target.value.trim().toLowerCase();
+  if (e.key === 'Enter' && q) {
+    document.querySelectorAll('.nav-links a').forEach(a => a.classList.remove('active'));
+    document.querySelectorAll('.nav-links a')[1].classList.add('active');
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    document.getElementById('booksPage').classList.add('active');
+    document.getElementById('pageTitle').textContent = 'Books';
+    document.getElementById('searchQuery').value = q;
+    renderFilterBar();
+    searchBooks();
+  }
+}
+
+// ==================== HELPERS ====================
+function logActivity(type, msg) {
+  activityLog.push({ type, msg, time: Date.now() });
+  if (activityLog.length > 50) activityLog.shift();
+}
+function updateCounts() {
+  document.getElementById('bookCount').textContent = books.length;
+  document.getElementById('userCount').textContent = users.length;
+}
+function escapeHtml(str) {
+  return str.replace(/[&<>"']/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[m]);
+}
+function renderAll() {
+  renderBooks(); renderUsers(); renderTransactionLog(); updateCounts();
+}
+
+// ==================== PRELOADED DATA ====================
+if (!loadState()) {
+  books = [
+    { id: 1, title: "The Great Gatsby", tags: ["classic", "novel"], count: 2 },
+    { id: 2, title: "Harry Potter and the Sorcerer's Stone", tags: ["fantasy", "magic"], count: 5 },
+    { id: 3, title: "Introduction to Algorithms", tags: ["computer", "DSA"], count: 3 },
+    { id: 4, title: "Clean Code", tags: ["programming", "software"], count: 4 },
+    { id: 5, title: "To Kill a Mockingbird", tags: ["classic", "drama"], count: 1 },
+    { id: 6, title: "1984", tags: ["classic", "dystopia"], count: 2 },
+    { id: 7, title: "The Pragmatic Programmer", tags: ["programming", "software"], count: 3 },
+    { id: 8, title: "Data Structures in C", tags: ["computer", "DSA"], count: 1 },
+    { id: 9, title: "Lord of the Rings", tags: ["fantasy", "adventure"], count: 6 },
+    { id: 10, title: "Artificial Intelligence: A Modern Approach", tags: ["AI", "computer"], count: 2 },
+    { id: 11, title: "Pride and Prejudice", tags: ["classic", "romance"], count: 0 },
+    { id: 12, title: "Deep Learning with Python", tags: ["AI", "computer"], count: 2 }
+  ];
+  nextBookId = 13;
+  users = [
+    { id: 1, name: "Alice", borrowed: new Set([2, 4]) },
+    { id: 2, name: "Bob", borrowed: new Set([3]) },
+    { id: 3, name: "Charlie", borrowed: new Set([1, 5, 6]) },
+    { id: 4, name: "Diana", borrowed: new Set([9]) },
+    { id: 5, name: "Eve", borrowed: new Set() },
+    { id: 6, name: "Frank", borrowed: new Set([7, 10]) }
+  ];
+  nextUserId = 7;
+  overduePQ = [
+    { bid: 2, due: Date.now() - 5 * 24 * 60 * 60 * 1000 },
+    { bid: 9, due: Date.now() - 2 * 24 * 60 * 60 * 1000 },
+    { bid: 3, due: Date.now() + 4 * 24 * 60 * 60 * 1000 },
+    { bid: 7, due: Date.now() + 10 * 24 * 60 * 60 * 1000 },
+  ];
+  overduePQ.sort((a, b) => a.due - b.due);
+  saveState();
+}
+
+// ==================== INIT ====================
+loadTheme();
+renderAll();
+renderDashboard();
+renderFilterBar();
+</script>
+</body>
+</html>
